@@ -1,0 +1,32 @@
+POST /api/auth/signup HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+  "name": "test4",
+  "lastName": "test4",
+  "email": "test4@icloud.com",
+  "password": "1234",
+  "roleName": "admin"
+}
+
+###
+# @no-cookie-jar
+POST /api/auth/login HTTP/1.1
+Host: localhost:3000
+Content-Type: application/json
+
+{
+"email": "test4@icloud.com",
+"password": "12334"
+}
+
+###
+GET /user
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NTg3ZDZlOWE4OWJlMjdlZGZjMzc5ZmQiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsImlhdCI6MTcwMzc5MzU1MSwiZXhwIjoxNzAzNzk3MTUxfQ.cNPEFOmDQzlHmygl5xyLbW5e0OFSm5klAY9cgRmR_8Y
+Host: localhost:3000
+Content-Type: application/json
+
+
+
+

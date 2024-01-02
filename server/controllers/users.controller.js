@@ -1,10 +1,12 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/users.model');
+const Role = require('../models/roles.model'); // Asegúrate de que la ruta sea correcta
+
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 async function getAllUsers(req, res) {
     try {
-        const users = await User.find();
+        const users = await User.find().select('-password').populate('roles');
         res.json(users);
     } catch (err) {
         res.status(500).json({message: err.message});
@@ -13,7 +15,7 @@ async function getAllUsers(req, res) {
 
 async function getUserById(req, res, next) {
     try {
-        let user = await User.findById(req.params.id);
+        let user = await User.findById(req.params.id).select('-password').populate('roles');
         if (!user) {
             return res.status(404).json({message: 'Cannot find user'});
         }
@@ -24,16 +26,76 @@ async function getUserById(req, res, next) {
     }
 }
 
+async function getAllStudents(req, res){
+    try {
+        const studentRoleId = await Role.findOne({'name': 'student'});
+
+        if (!studentRoleId) {
+            return res.status(404).json({message: "Role student dont find"})
+        }
+
+        const students = await User.find({roles: {$in: [studentRoleId._id]}}).select('-password');
+        res.json(students)
+    } catch (err){
+        res.status(500).json({ message: err.message})
+    }
+}
+
+async function getAllTeachers(req, res){
+    try {
+        const teacherRoleId = await Role.findOne({'name': 'teacher'});
+
+        if (!teacherRoleId) {
+            return res.status(404).json({message: "Role teacher dont find"})
+        }
+
+        const teachers = await User.find({roles: {$in: [teacherRoleId._id]}}).select('-password');
+        res.json(teachers)
+    } catch (err){
+        res.status(500).json({ message: err.message})
+    }
+}
+
+async function assignStudentsByEmail(req, res) {
+    try {
+        const teacherEmail = req.body.teacherEmail;
+        const studentEmails = req.body.studentEmails; // Asume que esto es una lista de correos electrónicos de estudiantes
+
+        const teacher = await User.findOne(
+            { email: teacherEmail}
+        ).select('-password');
+
+        if (!teacher) {
+            return res.status(404).json({ message: 'Teacher dont find' });
+        }
+
+        const students = await User.find(
+            { email: { $in: studentEmails }}
+        ).select('-password');
+
+        teacher.students = students.map(student => student._id);
+        await teacher.save();
+
+        res.status(200).json({ message: 'Estudiantes asignados correctamente' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
 async function createUser(req, res) {
     try {
         const email = req.body.email.toLowerCase();
         const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
+
+        const roles = await Role.find({ 'name': { $in: req.body.roles } });
+        const roleIds = roles.map(role => role._id);
+
         const newUser = new User({
             name: req.body.name,
             lastName: req.body.lastName,
             email: email,
             password: hashedPassword,
-            role: req.body.role,
+            roles: roleIds,
         });
 
         await newUser.save();
@@ -43,7 +105,7 @@ async function createUser(req, res) {
             name: newUser.name,
             lastName: newUser.lastName,
             email: newUser.email,
-            role: newUser.role
+            roles: newUser.roles
         });
     } catch (err) {
         if (err.code === 11000) {
@@ -61,6 +123,11 @@ async function updateUser(req, res) {
 
     if (req.body.email) {
         req.body.email = req.body.email.toLowerCase()
+    }
+
+    if (req.body.roles) {
+        const roles = await Role.find({ 'name': { $in: req.body.roles } });
+        req.body.roles = roles.map(role => role._id);
     }
 
     Object.assign(res.user, req.body);
@@ -87,7 +154,7 @@ async function loginUser(req, res) {
         if (validPassword) {
 
             const token = jwt.sign(
-                { userId: user._id, email: user.email, role: user.role },
+                { userId: user._id, email: user.email },
                 process.env.JWT_SECRET,
                 { expiresIn: '1h' }
             );
@@ -107,5 +174,8 @@ module.exports = {
     getUserById,
     createUser,
     updateUser,
-    loginUser
+    loginUser,
+    getAllStudents,
+    assignStudentsByEmail,
+    getAllTeachers
 };

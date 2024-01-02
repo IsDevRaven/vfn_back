@@ -3,32 +3,28 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true,
-        description: "must be a string and is required"
+        required: true
     },
     lastName: {
         type: String,
-        required: true,
-        description: "must be a string and is required"
+        required: true
     },
     email: {
         type: String,
         required: true,
         unique: true,
-        match: [/^.+@.+\..+$/, "Please fill a valid email address"],
-        description: "must be a string in the format of an email and is required",
+        match: [/^.+@.+\..+$/, "Please fill a valid email address"]
     },
     password: {
         type: String,
-        required: true,
-        description: "must be a string and is required"
+        required: true
     },
     role: {
-        type: String,
-        required: true,
-        enum: ['student', 'teacher'],
-        description: "can only be one of 'student' or 'teacher'"
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role'
     }
+}, {
+    timestamps: true
 });
 
 

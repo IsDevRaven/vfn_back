@@ -1,40 +1,57 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/users.model')
 function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
 
-    if (token == null) {
-        return res.sendStatus(401);
+    const token = req.cookies.token
+
+    if (!token) {
+        return res.status(401).json({ message:  'No token, authorization denied'});
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+
         if (err) {
             return res.sendStatus(403);
         }
 
-        req.user = user;
-        next();
+        try {
+            const fullUser = await User.findById(decoded.userId).populate('role');
+
+            if (!fullUser) {
+                return res.status(403).json({ message: 'Access forbidden: User not found' });
+            }
+
+            req.user = {
+                ...decoded,
+                name: fullUser.name,
+                role: fullUser.role
+            };
+
+            next();
+
+        } catch (error) {
+            return res.status(500).json({ message: 'Internal server error' });
+        }
     });
 }
 
-function checkSelf(req, res, next) {
-    if (req.user.userId !== req.params.id) {
-        return res.status(403).json({ message: "Access forbidden: You can only access your own data" });
-    }
-    next();
-}
-
-function checkRole(role) {
+function checkPermission(permission) {
     return (req, res, next) => {
-        if (req.user.role !== role) {
-            return res.status(403).json({ message: "Access forbidden: Insufficient permissions" });
+
+        const hasPermission = req.user.role.some(role =>
+            role.permissions.includes(permission)
+        );
+
+        if (!hasPermission) {
+            return res.status(403).json({ message: 'Access forbidden: Insufficient permissions' });
         }
+
         next();
     };
 }
 
+
 module.exports = {
     authenticateToken,
-    checkRole,
-    checkSelf
+    checkPermission
 }
