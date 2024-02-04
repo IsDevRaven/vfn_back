@@ -1,91 +1,149 @@
-import {Button, Heading, useToast} from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    Heading,
+    useToast,
+    VStack,
+    SkeletonText,
+    FormControl,
+    FormLabel,
+    Input,
+    Flex, Center, Spacer, Grid, Text,
+} from "@chakra-ui/react";
 import {useEffect, useState} from "react";
-import axios from "axios";
-import {useNavigate} from "react-router-dom";
+import ChangePasswordModal from "./ChangePasswordModal";
+import {useAuth} from "../AuthContext.jsx";
 
 export default function Profile() {
 
-    const navigate = useNavigate()
-    const [userData, setUserData] = useState(null)
-    const toast=  useToast()
-    const [logged, setLogged] = useState(false)
+    const toast = useToast()
 
-    useEffect( () => {
-        axios.get(
-            'http://localhost:3000/api/auth/profile',
-            {
-                withCredentials: true
-            }
-        ).then(
-            response => {
-                setLogged(true)
-                setUserData(response.data)
-                console.log('Hola')
-            }
-        ).catch(
-            err => {
-                if (err.request.status === 401) {
-                    toast({
-                        title: 'Unregistered user',
-                        status: 'error',
-                        duration: 5000,
-                        isClosable: true
-                    });
+    const {userData: userDataContext, setUserData: setUserDataContext, isLoading: isLoadingAuth} = useAuth()
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
 
-                    navigate('/login')
-
-                }
-            }
-
-        )
-
-    }, []);
-
-    const getCookieValue = (name) => (
-        document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1]
-    );
+    const [userData, setUserData] = useState({
+        name: '',
+        lastName: '',
+        email: '',
+        role: {
+            name: ''
+        }
+    })
 
 
     useEffect(() => {
-        console.log(getCookieValue('token'))
-    })
+        if (!isLoadingAuth && Object.keys(userDataContext).length > 0) {
+            setUserData(userDataContext);
+            setIsLoading(false); // No más carga si el contexto de autenticación ha terminado de cargar
+        }
+    },[userDataContext, isLoadingAuth]); // Añadir isLoadingAuth como dependencia
 
-    if (!logged) {
-        return (
-            <></>
-        )
-    }
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setUserData({ ...userData, [name]: value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        setTimeout(() => {
+
+            toast({
+                title: 'Perfil actualizado.',
+                description: 'Tus datos han sido actualizados con éxito.',
+                status: 'success',
+                duration: 5000,
+                isClosable: true,
+            });
+            setIsSubmitting(false)
+        }, 2000);
+    };
+
 
     return (
-
         <>
-            <Heading>
-                Profile
-            </Heading>
-            {
-                userData ?  (
-                    <>
-                        <div>
-                            <p>ID: {userData.userId}</p>
-                            <p>Name: {userData.name}</p>
-                            <p>Role: {userData.role.name} </p>
-                        </div>
 
-                        <Button
-                            onClick={() => navigate('/login')}
-                        >
-                            Logout
-                        </Button>
-                    </>
+                    <Flex direction={"column"} gap={'20px'}>
+                        <Center>
+                            <Heading>
+                                Profile
+                            </Heading>
+                        </Center>
+                    <VStack
+                        as="form"
+                        spacing={4}
+                        onSubmit={handleSubmit}
+                        align={'stretch'}
+                    >
+                        {isLoading ? (
+                            <SkeletonText mt="4" noOfLines={4} spacing="4" />
+                        ) : (
+                            <>
+                                <FormControl id="name">
+                                    <FormLabel>Name</FormLabel>
+                                    <Input
+                                        type="text"
+                                        name="name"
+                                        value={userData.name}
+                                        onChange={handleInputChange}
+                                    />
+                                </FormControl>
+                                <FormControl id="name">
+                                    <FormLabel>Last Name</FormLabel>
+                                    <Input
+                                        type="text"
+                                        name="lastName"
+                                        value={userData.lastName}
+                                        onChange={handleInputChange}
+                                    />
+                                </FormControl>
+                                <FormControl id="email" isDisabled={true}>
+                                    <FormLabel>Email</FormLabel>
+                                    <Input
+                                        type="email"
+                                        name="email"
+                                        value={userData.email}
+                                        onChange={handleInputChange}
+                                    />
+                                </FormControl>
+                                <FormControl id="role" isDisabled={true}>
+                                    <FormLabel>Role</FormLabel>
+                                    <Input
+                                        type="text"
+                                        name="role"
+                                        value={userData.role.name[0].toUpperCase() + userData.role.name.slice(1)}
+                                        onChange={handleInputChange}
+                                    />
+                                </FormControl>
 
+                                <Spacer/>
 
-                ) : (
-                    <p>Loading ...</p>
-                )
-            }
+                                <Button
+                                    type="submit"
+                                    colorScheme="teal"
+                                    isLoading={isSubmitting}
+                                    loadingText='Submitting'
+                                >
+                                    Update profile
+                                </Button>
+                                <Grid
+                                    templateColumns='repeat(2, 1fr)'
+                                    alignItems={'center'}
+                                >
+                                    <Text as='b'>
+                                        Update Password?
+                                    </Text>
+                                    <ChangePasswordModal></ChangePasswordModal>
+                                </Grid>
 
+                            </>
+                        )}
+                    </VStack>
 
+                    </Flex>
         </>
 
-    )
+    );
 }

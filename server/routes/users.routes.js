@@ -17,9 +17,6 @@ router.get('/student', authenticateToken, checkPermission('VIEW_ALL_USERS'), use
 router.get('/teacher', usersController.getAllTeachers)
 router.patch('/teacher/student', usersController.assignStudentsByEmail);
 
-
-router.post('/', usersController.createUser);
-router.post('/login', usersController.loginUser);
 router.get('/', authenticateToken, checkPermission('VIEW_ALL_USERS'), usersController.getAllUsers);
 router.get('/:id', usersController.getUserById, (req, res) => res.json(res.user));
 router.patch('/:id', usersController.getUserById, usersController.updateUser);

@@ -1,14 +1,13 @@
-import { useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import Form from "./Form.jsx";
 import {Button, Grid, Spacer, Text} from "@chakra-ui/react";
+import { useAuth} from "../AuthContext.jsx";
 
 export default function LogInForm() {
 
-    const getCookieValue = (name) => (
-        document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1]
-    );
-
+    const { login } = useAuth();
     const navigate = useNavigate();
+
 
     const signUpFields = [
         {name: 'email', label: 'Email', type: 'email', isRequired: true, placeholder: 'Enter your last email'},
@@ -33,8 +32,7 @@ export default function LogInForm() {
 
             if (response.ok) {
 
-                const token = getCookieValue('token')
-                console.log(token)
+                login()
 
                 toast({
                     title: 'Registration successful',
@@ -44,7 +42,7 @@ export default function LogInForm() {
                     isClosable: true,
                 });
 
-                navigate('/profile')
+                navigate('/')
 
             } else {
                 toast({
@@ -69,6 +67,7 @@ export default function LogInForm() {
 
     }
 
+
     return (
         <>
             <Form
@@ -77,7 +76,7 @@ export default function LogInForm() {
                 submitHandler={signInSubmitHandler}
                 submitName={'Log In'}
             >
-                <Spacer />
+                <Spacer/>
                 <Grid
                     templateColumns='repeat(2, 1fr)'
                     alignItems={'center'}
@@ -85,13 +84,11 @@ export default function LogInForm() {
                     <Text as='b'>
                         Don't you have a user?
                     </Text>
-                    <Button
-                        onClick={() => navigate('/signup')}
-                    >
+
+                    <Button as={Link} to={'/signup'}>
                         Sing up
                     </Button>
                 </Grid>
-
             </Form>
         </>
     );

@@ -25,6 +25,7 @@ async function getRoleByName(req, res, next) {
         return res.status(500).json({message: err.message});
     }
 }
+
 async function createRol(req, res) {
     try {
         const newRole = new Role({

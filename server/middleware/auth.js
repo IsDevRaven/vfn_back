@@ -15,7 +15,9 @@ function authenticateToken(req, res, next) {
         }
 
         try {
-            const fullUser = await User.findById(decoded.userId).populate('role');
+            const fullUser = await User.findById(decoded.userId)
+                .populate('role')
+                .select('-password')
 
             if (!fullUser) {
                 return res.status(403).json({ message: 'Access forbidden: User not found' });
@@ -24,6 +26,8 @@ function authenticateToken(req, res, next) {
             req.user = {
                 ...decoded,
                 name: fullUser.name,
+                lastName: fullUser.lastName,
+                email: fullUser.email,
                 role: fullUser.role
             };
 

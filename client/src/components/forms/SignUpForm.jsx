@@ -1,5 +1,5 @@
 import Form from "./Form.jsx";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {Button, Grid, Spacer, Text} from "@chakra-ui/react";
 
 export default function SignUpForm() {
@@ -97,12 +97,10 @@ export default function SignUpForm() {
                     templateColumns='repeat(2, 1fr)'
                     alignItems={'center'}
                 >
-                    <Text as='b' fontSize={'sm'}>
+                    <Text as={'b'} fontSize={'sm'}>
                         Do you already have a user?
                     </Text>
-                    <Button
-                        onClick={() => navigate('/login')}
-                    >
+                    <Button as={Link} to={'/login'}>
                         Log in
                     </Button>
                 </Grid>
